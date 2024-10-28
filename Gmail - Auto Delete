@@ -1,0 +1,32 @@
+function cleanUp() {
+  const delayDays = 30; // Number of days before messages are moved to trash
+  const maxDate = new Date(); // Get the current date
+  maxDate.setDate(maxDate.getDate() - delayDays); // Calculate the cutoff date
+
+  const labelName = "30 Delete"; // Name of the label to search for
+  const label = GmailApp.getUserLabelByName(labelName); // Retrieve the label
+
+  if (!label) {
+    Logger.log('Label "' + labelName + '" not found'); // Log if the label doesn't exist
+    return; // Exit the function if label is not found
+  }
+
+  const threads = label.getThreads(); // Get all threads with the specified label
+  let deletedCount = 0; // Initialize counter for deleted threads
+
+  // Process threads in batches to avoid exceeding execution limits
+  for (let i = 0; i < threads.length; i += 100) {
+    const batch = threads.slice(i, i + 100); // Create a batch of up to 100 threads
+
+    batch.forEach(function(thread) { // Use function keyword for compatibility
+      if (thread.getLastMessageDate() < maxDate) { // Check if thread is older than cutoff date
+        thread.moveToTrash(); // Move thread to trash if condition is met
+        deletedCount++; // Increment the deleted count
+      }
+    });
+
+    Utilities.sleep(1000); // Pause for a second between batches to avoid rate limits
+  }
+
+  Logger.log('Deleted ' + deletedCount + ' threads older than ' + delayDays + ' days'); // Log the number of deleted threads
+}
